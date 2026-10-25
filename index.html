@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Пианино в браузере: играй, записывай несколько дорожек, делись мелодией ссылкой.">
+<meta name="theme-color" content="#e8e7f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1020" media="(prefers-color-scheme: dark)">
+<title>Клавиши</title>
+<!-- Прямая ссылка на мини-приложение из BotFather (/newapp), например https://t.me/Rosto_music_bot/klavishi.
+     Если указать, кнопка «Поделиться» в Telegram будет открывать мелодию прямо в приложении -->
+<meta name="klavishi:tg-app" content="">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234a4fd6'/%3E%3Cpath d='M7 8h18v16H7z' fill='%23fff'/%3E%3Cpath d='M11 8h3v9h-3zM18 8h3v9h-3z' fill='%2323233a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<script>
+  // Тему ставим до отрисовки, чтобы не мигало
+  try { var t = localStorage.getItem('klavishi:theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</head>
+<body>
+<main class="app">
+  <header class="top">
+    <div>
+      <h1>Клавиши</h1>
+      <p class="sub">Играй мышкой, пальцем или клавиатурой. Записывай дорожки одну поверх другой и делись мелодией ссылкой.</p>
+    </div>
+    <button class="icon-btn" id="theme" type="button"></button>
+  </header>
+
+  <section class="stage" id="stage" aria-label="Пианино">
+    <p class="stage-cap" id="stageCap"></p>
+    <div class="fx" id="fx"></div>
+    <div class="keys" id="keys"></div>
+  </section>
+
+  <section class="console" aria-label="Управление">
+    <div class="transport">
+      <button class="btn rec" id="rec" type="button"></button>
+      <button class="btn" id="play" type="button"></button>
+      <button class="btn" id="loop" type="button" aria-pressed="false"></button>
+      <button class="btn" id="metro" type="button" aria-pressed="false"></button>
+    </div>
+    <p class="status" id="status" aria-live="polite"></p>
+
+    <div class="inst" id="inst" role="radiogroup" aria-label="Звучание"></div>
+
+    <div class="tools">
+      <div class="stepper">
+        <button class="btn" id="octDown" type="button" aria-label="Октава ниже">−</button>
+        <output id="octLabel"></output>
+        <button class="btn" id="octUp" type="button" aria-label="Октава выше">+</button>
+      </div>
+      <div class="stepper">
+        <button class="btn" id="bpmDown" type="button" aria-label="Медленнее">−</button>
+        <output id="bpmLabel"></output>
+        <button class="btn" id="bpmUp" type="button" aria-label="Быстрее">+</button>
+      </div>
+      <label class="slider">
+        <span>Эхо</span>
+        <input type="range" id="reverb" min="0" max="100" step="1">
+      </label>
+      <button class="btn pedal" id="pedal" type="button" aria-pressed="false">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 18h14l-2-9H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9V4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>Педаль</span>
+      </button>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="tracksTitle">
+    <div class="panel-head">
+      <h2 id="tracksTitle">Дорожки <span class="count" id="trackCount"></span></h2>
+      <button class="btn small" id="clearAll" type="button">Очистить всё</button>
+    </div>
+    <ol class="tracks" id="tracks"></ol>
+    <p class="empty" id="empty">
+      Нажми «Запись» и сыграй что-нибудь. Получится первая дорожка.
+      Следующую можно записать поверх неё: уже готовые дорожки будут звучать, пока ты играешь.
+      Включи метроном, чтобы перед записью был отсчёт и всё попадало в такт.
+    </p>
+  </section>
+
+  <section class="panel" aria-labelledby="shareTitle">
+    <h2 id="shareTitle">Поделиться и сохранить</h2>
+    <div class="row">
+      <button class="btn" id="share" type="button"></button>
+      <button class="btn" id="wav" type="button"></button>
+      <button class="btn" id="midi" type="button"></button>
+    </div>
+    <input class="share-link" id="shareLink" type="text" readonly hidden aria-label="Ссылка на мелодию">
+    <p class="note" id="exportNote">Ссылка хранит только ноты, звучания и громкость дорожек. Выключенные дорожки в неё не попадают.</p>
+  </section>
+
+  <details class="hint">
+    <summary>Как играть с клавиатуры компьютера</summary>
+    <p>
+      Нижний ряд <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> <kbd>B</kbd> <kbd>N</kbd> <kbd>M</kbd> играет белые клавиши, а <kbd>S</kbd> <kbd>D</kbd> <kbd>G</kbd> <kbd>H</kbd> <kbd>J</kbd> — чёрные.
+      Верхний ряд <kbd>Q</kbd> … <kbd>U</kbd> и цифры <kbd>2</kbd> <kbd>3</kbd> <kbd>5</kbd> <kbd>6</kbd> <kbd>7</kbd> играют следующую октаву.
+      <kbd>Пробел</kbd> — педаль, <kbd>−</kbd> и <kbd>=</kbd> меняют октаву. Раскладка языка не важна.
+      На экране можно вести пальцем по клавишам, чтобы сыграть глиссандо.
+    </p>
+  </details>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/state.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/keyboard.js"></script>
+<script src="js/share.js"></script>
+<script src="js/recorder.js"></script>
+<script src="js/export.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/telegram.js"></script>
+<script src="js/main.js"></script>
+<!-- Telegram Mini App: грузится в фоне, без Telegram ничего не делает -->
+<script src="https://telegram.org/js/telegram-web-app.js" async onload="Klav.tg.init()"></script>
+</body>
+</html>
