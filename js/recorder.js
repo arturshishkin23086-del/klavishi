@@ -325,7 +325,9 @@
 
   function loadFromHash(){
     const code = location.hash.replace(/^#/, '');
-    return code ? loadCode(code) : false;
+    // Telegram кладёт в адрес свои данные (#tgWebAppData=…&…) — это не мелодия, молча пропускаем
+    if (!code || !/^[A-Za-z0-9_-]+$/.test(code)) return false;
+    return loadCode(code);
   }
 
   function loadCode(code){

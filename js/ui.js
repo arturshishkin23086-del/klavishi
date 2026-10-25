@@ -309,7 +309,8 @@
     if (res.error){ toast(res.error); return; }
     // внутри чужой рамки (например, опубликованной страницы) свой адрес не тот, что видит человек
     const meta = document.querySelector('meta[name="klavishi:share-base"]');
-    const base = (meta && meta.content) || location.href.split('#')[0];
+    // только адрес страницы: без служебных параметров Telegram и прочего хвоста
+    const base = (meta && meta.content) || location.href.split(/[?#]/)[0];
     const url = (K.tg.active && K.tg.appLink(res.code)) || base + '#' + res.code;
     // ссылку показываем всегда: если буфер обмена недоступен, её можно выделить вручную
     els.shareLink.value = url;
